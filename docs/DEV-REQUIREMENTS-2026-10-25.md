@@ -59,6 +59,8 @@
 23. **不给驾驶/操作机械结论**：只提供"我的记录 + 想问医生的问题"，界面不出现"可以开车/不宜驾驶"。
 24. **试验登记库没有入排标准与生物标志字段**（本轮实测：CTV / ICTRP / ChiCTR / CDE 四通道的返回结构里只有状态、分期、国家、入组人数、起止日期、申办者，**没有** 入排标准、HLA、脑脊液食欲素）。因此任何"匹配指数"只能对**已登记字段**归一化，入排与生物标志维度必须**单独列出为缺口**；**禁止把缺口算成 0 分**（否则等于替登记库编造入排）。错误来源：把"库里有这个试验"读成"你符合这个试验"，患者会拿着分数去挂号。
 25. **ICTRP / ChiCTR 在线抓取存在 WAF / 非法访问拦截**（实测：ICTRP 回发翻页与 Export 被重定向 `NoAccess.aspx`；ChiCTR `searchproj.html`→405、`searchProject`→`{"code":40000,"message":"非法访问"}`）。脚本必须把 `partial` 与 `unsupported` **分开记**，**不允许降级成 `ready`**；`unsupported` 的 0 条必须随附覆盖声明"未查通 ≠ 没有"。错误来源：把"没查通"写成 0 条，等于告诉罕见病患者"没有研究在招"。
+26. **凡是原型带档案切换器的，`schema` 第一版就必须带 `profile_key`**（本轮踩了：0001 把"本机优先"读成"单用户单档案"，`profile` 用 `CHECK (id = 1)`，其余 12 张表没有 `profile_key`，而 M2 原型有 A/B 两个档案 + 顶栏切换器）。0001 冻结后只能发 `0002` 做**整表重建**（rename → create → copy → drop → rename），因为 SQLite 无法把新列加进主键，而 `naps` / `night_events` / `med_tolerance` 是复合主键表。代价：13 张表各写一遍、索引全重建、老数据统一归到 `profile_key='A'`。错误来源：切换档案时把 A 的发作算进 B 的看板，**不报错**，只是数字悄悄错。判定：原型里有 `#profile-btn` 或多档案数据，schema 就必须带 `profile_key`。
+27. **多档案的数据隔离要在三处同时成立**：① 每张业务表带 `profile_key` 且有非空 CHECK；② 所有读模型查询都带 `WHERE profile_key = ?`（裸 SELECT 会跨档案串数据）；③ 归档/导出必须显式带档案标识，不允许把两个档案混进一个文件。断言落点：`scripts/check-schema.mjs` 的"每张业务表都带 profile_key"与 `test/data-contract.test.mjs` 的"多档案隔离"两条。
 
 ## 四、本轮明确未做（不许在验收里算通过）
 

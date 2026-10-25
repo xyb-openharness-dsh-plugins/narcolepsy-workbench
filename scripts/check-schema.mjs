@@ -72,6 +72,20 @@ for (const table of ['naps', 'night_events', 'med_tolerance']) {
   check(true, `${table} 可按 rowid 排序${rows.length ? '' : '（表为空）'}`)
 }
 
+// 多档案：0002 之后每张业务表都必须带 profile_key。
+// 为什么钉这一条：0001 把"本机优先"读成了"单用户单档案"，冻结后只能发一次表重建（0002）。
+// 新增业务表忘了 profile_key，就会在切换档案时把 A 的数据算进 B 的看板——而且不报错。
+const NO_PROFILE_TABLES = new Set(['meta'])
+for (const table of tables) {
+  if (NO_PROFILE_TABLES.has(table)) continue
+  const columns = db.prepare(`PRAGMA table_info(${table})`).all().map((r) => r.name)
+  check(columns.includes('profile_key'), `${table} 带 profile_key`)
+}
+
+// 档案表的主键必须是 profile_key（不能退回 CHECK(id = 1) 的单行设计）
+const profilePk = db.prepare('PRAGMA table_info(profile)').all().filter((c) => c.pk > 0).map((c) => c.name)
+check(profilePk.length === 1 && profilePk[0] === 'profile_key', `profile 主键是 profile_key（实测 ${profilePk.join('+') || '无'}）`)
+
 db.close()
 
 if (problems.length) {
