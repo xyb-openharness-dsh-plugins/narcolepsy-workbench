@@ -134,6 +134,8 @@ npm run check        # 语法 + 版本一致 + schema 冻结 + 文案红线 + �
 npm run audit        # 家族一致性：版本三处一致 / layout 单一来源 / 检查链完整 / 文档与密钥卫生
 npm run check:proto  # 原型渲染走查：30 个 (view, sub) × 3 档宽度 = 90 页，出数字
 npm run check:ix     # 原型交互走查：94 条断言（记发作 / ESS / 夜间 / 换药 / 指标卡 / 一图秀 / 试验匹配 / 整页视图）
+npm run check:ui     # 开发版界面走查：真 HTTP + 真 sqlite + 真浏览器，断言数据真的来自库（不是回退演示数据）
+npm run check:installed  # 装机副本自检：对装进 profile 的那一份跑 health/bootstrap/私密/UI（25 条）
 npm run fetch:trials # 四通道临床试验采集（需要网络）
 npm pack
 ```

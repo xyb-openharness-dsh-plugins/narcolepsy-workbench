@@ -414,3 +414,21 @@ history 是导航栈的**唯一真源**：
 "近 7 天 / 3 天后复诊"这类相对说法会随真实时间漂移，半年后整页都在说错事。
 做法：`NOW` 取**数据里最近的日期**（`latestDate()`），拿不到才回退系统日期；
 真记录的最近日期本来就在今天附近，两种模式都不会说假话。
+
+## 「装进去的那一份」必须单独验（2026-10-25 · M6）
+
+源码树全绿 ≠ 装进去能跑。这一轮把装机副本单独拉出来跑了一遍真请求
+（`scripts/probe-installed.mjs`，25 条断言），三个动作值得固化：
+
+1. **别猜 profile 名**：找"哪个 profile 的 `node_modules` 里真的有这个包"，比背
+   `profiles/web` 这种名字可靠。DSH Desktop 读的是 app 自带 Harness 下的 profile，
+   `~/.dsh/profiles/*` 是 CLI 侧的另一份，装错了重启后列表里就是没有。
+2. **宿主注入的 peer 在 profile 里可能不在**：`@deepseek-ai/schemastery` 由宿主在运行时给。
+   要单测装机副本，就把副本复制到临时目录、给 peer 放最小桩（只实现用到的那几个方法），
+   **不要往用户的 profile 里塞桩**。
+3. **`apply()` 的返回值要当场验**：cordis 要求非 async 且返回 `undefined`；返回普通对象会
+   `Invalid effect`，而宿主只会打三行日志。断言 `returned === undefined` 比事后看日志便宜。
+
+顺带一条包装层面的：**仓库里留着的参考材料不必随包发**。首包 7.3 MB 里有 3 MB 是
+本仓明确不用的 CTCAE PDF（`docs/METRIC-GRADING.md` 写了不启用 CTCAE），从 `files`
+白名单摘掉后 3.84 MB。参考材料留在仓库里，包只发运行时真正读的东西。
