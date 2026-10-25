@@ -28,6 +28,7 @@
     "check:proto": "node scripts/probe-prototype.mjs",
     "check:ix": "node scripts/probe-interactions.mjs",
     "check:ui": "node scripts/probe-ui.mjs",
+    "check:activate": "node scripts/smoke-activate.mjs",
     "check:installed": "node scripts/probe-installed.mjs",
     "check:host": "node scripts/check-host-contract.mjs",
     "check:readme": "node scripts/check-readme-assets.mjs .",
