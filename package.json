@@ -21,7 +21,9 @@
     "NOTICE.md"
   ],
   "scripts": {
-    "check": "node --check dsh/index.js && node --check lib/client.js && node --check lib/layout.js && node scripts/build-version.mjs --check && node scripts/check-schema.mjs && node scripts/check-wording.mjs && node scripts/check-readme-assets.mjs . && node --test test/*.test.mjs && node scripts/check-workbench-package.mjs . && node scripts/check-host-contract.mjs",
+    "check": "node --check dsh/index.js && node --check lib/client.js && node --check lib/layout.js && node scripts/build-version.mjs --check && node scripts/check-schema.mjs && node scripts/check-wording.mjs && node scripts/check-readme-assets.mjs . && node scripts/build-demo-trials.mjs --check && node --test test/*.test.mjs && node scripts/check-workbench-package.mjs . && node scripts/check-host-contract.mjs",
+    "check:proto": "node scripts/probe-prototype.mjs",
+    "check:ix": "node scripts/probe-interactions.mjs",
     "check:host": "node scripts/check-host-contract.mjs",
     "check:readme": "node scripts/check-readme-assets.mjs .",
     "test": "node --test test/*.test.mjs",

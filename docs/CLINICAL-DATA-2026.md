@@ -21,16 +21,17 @@
 - 诚实边界：0 条结果必须带该来源覆盖声明；逐来源终态落库（就绪/超时/未配置/部分覆盖/截断）。
 - **登记 ≠ 有效 ≠ 安全 ≠ 可入组**；界面状态栏一律「登记状态，未核实」。
 
-本轮执行状态：
+本轮执行状态（2026-10-25 本机一次真实运行，`generated_at=2026-10-25T05:14:21Z`）：
 
-| 通道 | 终态 | 说明 |
-| --- | --- | --- |
-| ictrp | ⏳ 未运行 | 本轮未执行联网采集（脚本已就绪，需显式运行） |
-| ctv | ⏳ 未运行 | 同上 |
-| chictr_online | ⏳ 未运行 | 同上 |
-| chinadrugtrials | ⏳ 未运行 | 同上 |
+| 通道 | 终态 | 条数 | 说明（含技术原因与下次怎么补） |
+| --- | --- | --- | --- |
+| `ctv`（ClinicalTrials.gov API v2） | `ready` | **176** | `totalCount=176`，按 `nextPageToken` 翻了 2 页全部取回，无截断。`raw_json` 只存关键字段快照，不存整个 `protocolSection`。 |
+| `ictrp`（WHO ICTRP） | `partial` | **10** | 上游检索页自称 397 records / 279 trials，实际只落到第 1 页 10 行。原因：ASP.NET 回发翻页（`__EVENTTARGET=GridView1`）与 `Export to CSV` / `Export to XML` **都被 WAF 重定向到 `NoAccess.aspx`**（HTTP 200，只能靠页面内容判断）。**下次怎么补**：换带浏览器会话的抓取（真实 UA + cookie jar + 保留 `__VIEWSTATE/__EVENTSTATETARGET` 回发），或改走 ICTRP 的 weekly export 文件；补通之前这条永远是 `partial`，不许写成 `ready`。 |
+| `chictr_online`（ChiCTR） | `unsupported` | **0** | 两条路都断：`/searchproj.html` → **HTTP 405**（阿里云 WAF 拦截页）；`/bin/chictr/website/searchProject` → HTTP 200 但返回 `{"code":40000,"message":"非法访问"}`，服务端还校验 `x-hyd-uuid` 会话令牌，纯 `fetch` 完成不了握手。**下次怎么补**：需要真实浏览器上下文或官方数据申请；补通之前 0 条必须随附覆盖声明"该库以中文注册为主，未查通 ≠ 没有"。 |
+| `chinadrugtrials`（CDE / NMPA） | `ready` | **14** | 页面自称共 14 条，14 条全部解析并逐条取详情页（列表页需三步：先 `GET /` 种 cookie → `GET searchlist.dhtml` 刷新会话 → `POST`）。 |
+| **合计** | — | **200** | 与 `data/trials/trials.jsonl` 200 行、`trials.sqlite` 的 `trials` 表 200 行、`channels` 表 4 行三处一致（2026-10-25 实测）。 |
 
-> **不写"无相关研究"**——没查过就是「未查过」。
+> **不写"无相关研究"**——没查通就是「未查过」。`partial` 与 `unsupported` 必须分开记：前者是"跑通了但只拿到一部分"，后者是"站点明确拒绝机读访问"，两者都不许降级成 `ready`。
 
 ## 3. 指标口径（本癌种启用）
 

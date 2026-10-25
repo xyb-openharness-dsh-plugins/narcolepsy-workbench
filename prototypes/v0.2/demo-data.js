@@ -78,6 +78,73 @@ function makeNights(seed, opts) {
   return out.sort((a, b) => (a.at < b.at ? 1 : -1));
 }
 
+/* ---------------- 多轨指标（27 号四条约束：永不加总 / 永不折算 / 各自独立归一化 / 分类只画节点） ----------------
+ *
+ * 为什么必须分轨：同一患者同一时间存在两个**不可能相加**的量（ESS 是「分」、发作时长是「分钟」、
+ * 夜间觉醒是「次」、体重是「kg」），把它们塞进同一张图同一根轴，等于替患者虚构了一个换算关系。
+ * 轨道归属写在数据里（track 字段），**页面不许自己分组**——否则同一个指标在两张卡上会挂到不同轨。
+ */
+const TRACKS = {
+  scale: { label: '量表轨', color: '#5b67d8', hint: '按整次填写' },
+  event: { label: '发作轨', color: '#a8551c', hint: '按事件计' },
+  night: { label: '夜间轨', color: '#6b4fa8', hint: '按夜计' },
+  vitals: { label: '体征轨', color: '#2f6f66', hint: '按次测量' },
+  lab: { label: '检查轨', color: '#8a5a0c', hint: '按次检查 · 含分类结果' }
+};
+
+const median = (nums) => {
+  const s = nums.filter((v) => v != null).slice().sort((a, b) => a - b);
+  return s.length ? s[Math.floor((s.length - 1) / 2)] : null;
+};
+const round1 = (v) => (v == null ? null : Math.round(v * 10) / 10);
+
+/* 按月聚合：日期取「该月最后一条记录的日期」（真实日期，不编一个"月末"出来） */
+function byMonth(list, dateOf) {
+  const map = new Map();
+  for (const it of list) {
+    const d = String(dateOf(it)).slice(0, 10);
+    const m = d.slice(0, 7);
+    if (!map.has(m)) map.set(m, []);
+    map.get(m).push({ d, it });
+  }
+  return [...map.entries()]
+    .sort((a, b) => (a[0] < b[0] ? -1 : 1))
+    .map(([month, arr]) => ({ month, last: arr.map((x) => x.d).sort().slice(-1)[0], items: arr.map((x) => x.it), n: arr.length }));
+}
+
+/* 派生口径全部从 naps / nights / ess 三条原始数组算出来，**不在这里手抄第二份数字**
+   （14 号：数据只有一个来源）。上一版把 ess_total / nap_duration 的 points 留成空数组，
+   导致「趋势」页永远空态、D2 三视图只落地 1/3 —— 这是评审 P0-7 的根因。 */
+function makeMetrics(profileKey, naps, nights, ess) {
+  const months = byMonth(naps, (n) => n.at);
+  const nightMonths = byMonth(nights, (n) => n.at);
+
+  const napMedian = months.map((g) => ({ d: g.last, v: median(g.items.map((n) => n.min)) })).filter((p) => p.v != null);
+  const napCount = months.map((g) => ({ d: g.last, v: g.items.length }));
+  const wakeCount = nightMonths.map((g) => ({ d: g.last, v: g.items.filter((n) => n.kind === 'awakening').length }));
+  const paralysisCount = nightMonths.map((g) => ({ d: g.last, v: g.items.filter((n) => n.kind === 'sleep_paralysis').length }));
+  const essPoints = ess.map((r) => ({ d: r.at, v: r.q.reduce((a, b) => a + b, 0) }));
+
+  const B = profileKey === 'B';
+  return [
+    /* 量表轨：整次一个点，不是每天一个点（ADR-2） */
+    { code: 'ess_total', track: 'scale', label: 'ESS 总分', unit: '分', dec: 0, kind: 'numeric', refLow: null, refHigh: null, source: '量表 ESS · 整次', points: essPoints, note: '每次填写一个点；总分由 8 项相加，不可手改。' },
+    /* 发作轨：时长型（可为空，NULL ≠ 0）+ 计数型，两个不同单位不折算 */
+    { code: 'nap_median_min', track: 'event', label: '单次发作时长中位数', unit: '分钟', dec: 0, kind: 'numeric', refLow: null, refHigh: null, source: '嗜睡发作 · 按月', points: napMedian, note: '只统计记了时长的次数；没记的不当 0 分钟参与。' },
+    { code: 'nap_count_month', track: 'event', label: '每月发作次数', unit: '次', dec: 0, kind: 'numeric', refLow: null, refHigh: null, source: '嗜睡发作 · 按月', points: napCount, note: '按事件计数；某月没记到不代表没发作。' },
+    /* 夜间轨 */
+    { code: 'awakening_count', track: 'night', label: '夜间觉醒次数', unit: '次', dec: 0, kind: 'numeric', refLow: null, refHigh: null, source: '夜间睡眠 · 按月', points: wakeCount, note: '同一夜多次记多次。' },
+    { code: 'paralysis_count', track: 'night', label: '睡眠瘫痪次数', unit: '次', dec: 0, kind: 'numeric', refLow: null, refHigh: null, source: '夜间睡眠 · 按月', points: paralysisCount, note: '本人描述的次数，不是"有多少次发生了"。' },
+    /* 体征轨 */
+    { code: 'weight', track: 'vitals', label: '体重', unit: 'kg', dec: 1, kind: 'numeric', refLow: null, refHigh: null, source: '门诊称重', points: B ? [{ d: '2026-06-05', v: 48.5 }, { d: '2026-08-15', v: 49.8 }, { d: '2026-10-18', v: 50.6 }] : [{ d: '2026-04-11', v: 54.2 }, { d: '2026-06-13', v: 55.0 }, { d: '2026-08-26', v: 53.6 }, { d: '2026-10-20', v: 54.1 }], note: '报告上没有参考范围，就写「需参考范围」，不借别人的。' },
+    { code: 'spo2_rest', track: 'vitals', label: '静息血氧饱和度', unit: '%', dec: 0, kind: 'numeric', refLow: 95, refHigh: 100, source: 'PSG / 门诊', points: B ? [{ d: '2026-05-21', v: 98 }] : [{ d: '2026-03-28', v: 97 }, { d: '2026-08-26', v: 98 }, { d: '2026-10-20', v: 97 }], note: '参考范围取报告原文，仅此一项有上限。' },
+    /* 检查轨：hla 是分类变量，只画节点不连线（27 号第 4 条） */
+    { code: 'orexin_a', track: 'lab', label: '脑脊液食欲素-A', unit: 'pg/mL', dec: 0, kind: 'numeric', refLow: 110, refHigh: null, source: '腰椎穿刺 · 报告原文', points: B ? [] : [{ d: '2026-03-29', v: 68 }], note: '阈值各实验室不同（常用 110 或 200 pg/mL），以报告原文为准；缺上限不借别人的。' },
+    { code: 'mslt_latency', track: 'lab', label: 'MSLT 平均睡眠潜伏期', unit: '分钟', dec: 1, kind: 'numeric', refLow: 8, refHigh: null, source: 'MSLT 报告原文', points: B ? [{ d: '2026-05-22', v: 5.2 }] : [{ d: '2026-03-29', v: 4.1 }], note: '单次检查一个点；复查才多一个点。' },
+    { code: 'hla_drb1', track: 'lab', label: 'HLA-DRB1*15:01', unit: '', dec: 0, kind: 'category', refLow: null, refHigh: null, source: '基因检测报告', points: B ? [{ d: '2026-05-22', v: '未测' }] : [{ d: '2026-03-28', v: '阳性' }], note: '分类型结果：只画节点、不连线——给类别连线会暗示"程度"，那是编出来的。' }
+  ];
+}
+
 const PROFILES = {
   A: {
     name: '陈默',
@@ -121,6 +188,7 @@ const PROFILES = {
 };
 
 const DEMO_DATA = {
+  tracks: TRACKS,
   profiles: PROFILES,
   naps: { A: makeNaps(20261025, { improving: true, proxy: false }), B: makeNaps(771102, { improving: false, proxy: true }) },
   nights: { A: makeNights(20261025, { rich: true }), B: makeNights(771102, { rich: false }) },
@@ -160,20 +228,7 @@ const DEMO_DATA = {
       { at: '2026-06-18', med: '莫达非尼', item: '食欲下降', value: 2, unit: '自评 0–3' }
     ]
   },
-  metrics: {
-    A: [
-      { code: 'ess_total', label: 'ESS 总分', unit: '分', dec: 0, kind: 'numeric', section: '量表', refLow: null, refHigh: null, points: [] },
-      { code: 'nap_duration', label: '单次发作时长（近 20 次均值）', unit: '分钟', dec: 0, kind: 'numeric', section: '发作', refLow: null, refHigh: null, points: [] },
-      { code: 'awakening_count', label: '夜间觉醒次数（每周）', unit: '次', dec: 0, kind: 'numeric', section: '夜间', refLow: null, refHigh: null, points: [] },
-      { code: 'spo2_rest', label: '静息 SpO₂', unit: '%', dec: 0, kind: 'numeric', section: '生命体征', refLow: 95, refHigh: 100, points: [{ d: '2026-03-28', v: 97 }, { d: '2026-08-26', v: 98 }, { d: '2026-10-20', v: 97 }] },
-      { code: 'weight', label: '体重', unit: 'kg', dec: 1, kind: 'numeric', section: '生命体征', refLow: null, refHigh: null, points: [{ d: '2026-04-11', v: 54.2 }, { d: '2026-06-13', v: 55.0 }, { d: '2026-08-26', v: 53.6 }, { d: '2026-10-20', v: 54.1 }] }
-    ],
-    B: [
-      { code: 'ess_total', label: 'ESS 总分', unit: '分', dec: 0, kind: 'numeric', section: '量表', refLow: null, refHigh: null, points: [] },
-      { code: 'nap_duration', label: '单次发作时长（近 20 次均值）', unit: '分钟', dec: 0, kind: 'numeric', section: '发作', refLow: null, refHigh: null, points: [] },
-      { code: 'weight', label: '体重', unit: 'kg', dec: 1, kind: 'numeric', section: '生命体征', refLow: null, refHigh: null, points: [{ d: '2026-06-05', v: 48.5 }, { d: '2026-08-15', v: 49.8 }, { d: '2026-10-18', v: 50.6 }] }
-    ]
-  },
+  metrics: null, /* 见文件末尾：由 naps / nights / ess 三条原始数组派生，不在此手抄 */
   questions: {
     A: [
       { body: '换成长效之后白天还是困，是不是剂量还要再调？', forVisit: '2026-11-03 神经内科', asked: null },
@@ -214,18 +269,28 @@ const DEMO_DATA = {
       { at: '2026-06-10', label: '开始莫达非尼 100 mg', kind: 'med', private: 0 }
     ]
   },
-  /* 看板待办：入口文案必须与 docs/INTERACTION-DESIGN.md §2 逐字一致（IP3） */
+  /* 看板待办：入口文案必须与 docs/INTERACTION-DESIGN.md §2 逐字一致（IP3）
+     每条带 scenario 编号：S01 记发作 / S02 复诊准备 / S03 填 ESS / S04 夜间事件 /
+     S05 换药 / S06 办事材料 / S08 看懂检查。评审 P0-2 说 S04/S05/S08 的入口卡根本没实现，
+     这里把它们做成**同一批任务卡**，不再另开一种"场景卡"，免得两套入口各说各话。 */
   tasks: {
     A: [
-      { key: 'nap', title: '今天记一次发作', note: '一条记录只要 4 个字段；也可以直接跟 AI 说', action: 'go-naps-add' },
-      { key: 'ess', title: '该填 ESS 了', note: '上次 2026-10-20 · 8 题约 3 分钟', action: 'go-ess-fill' },
-      { key: 'visit', title: '3 天后复诊', note: '2026-11-03 神经内科 · 有 3 个问题还没问', action: 'go-visit' },
-      { key: 'admin', title: '办事材料', note: '单位要病情说明；驾照换证也要材料', action: 'go-admin' }
+      { key: 'nap', scenario: 'S01', title: '今天记一次发作', note: '一条记录只要 4 个字段；也可以直接跟 AI 说', action: 'go-naps-add' },
+      { key: 'ess', scenario: 'S03', title: '该填 ESS 了', note: '上次 2026-10-20 · 8 题约 3 分钟', action: 'go-ess-fill' },
+      { key: 'visit', scenario: 'S02', title: '3 天后复诊', note: '2026-11-03 神经内科 · 有 3 个问题还没问', action: 'go-visit' },
+      { key: 'night', scenario: 'S04', title: '昨晚睡得怎么样', note: '觉醒 2 次、睡瘫 2 次、没记幻觉；补一条只要 3 个字段', action: 'go-night-add' },
+      { key: 'meds', scenario: 'S05', title: '用药有变化吗', note: '10-08 起莫达非尼改 200 mg 早一次；旧方案留着没删', action: 'go-meds' },
+      { key: 'metrics', scenario: 'S08', title: '最近一次检查', note: '10-20 门诊称重 54.1 kg；SpO₂ 97%；食欲素-A 还是 3 月那次', action: 'go-metrics-latest' },
+      { key: 'admin', scenario: 'S06', title: '办事材料', note: '单位要病情说明；驾照换证也要材料', action: 'go-admin' }
     ],
     B: [
-      { key: 'nap', title: '今天记一次发作', note: '家长代记会带标记，孩子本人可改', action: 'go-naps-add' },
-      { key: 'ess', title: '该填 ESS 了', note: '上次 2026-10-18 · 家长旁听', action: 'go-ess-fill' },
-      { key: 'visit', title: '16 天后复诊', note: '2026-11-10 儿科 · 有 2 个问题还没问', action: 'go-visit' }
+      { key: 'nap', scenario: 'S01', title: '今天记一次发作', note: '家长代记会带标记，孩子本人可改', action: 'go-naps-add' },
+      { key: 'ess', scenario: 'S03', title: '该填 ESS 了', note: '上次 2026-10-18 · 家长旁听', action: 'go-ess-fill' },
+      { key: 'visit', scenario: 'S02', title: '16 天后复诊', note: '2026-11-10 儿科 · 有 2 个问题还没问', action: 'go-visit' },
+      { key: 'night', scenario: 'S04', title: '昨晚睡得怎么样', note: '睡瘫 4 次、觉醒 6 次；孩子说不清幻觉，标"待确认"', action: 'go-night-add' },
+      { key: 'meds', scenario: 'S05', title: '用药有变化吗', note: '9-02 起莫达非尼加至 150 mg；孩子说下午还是困', action: 'go-meds' },
+      { key: 'metrics', scenario: 'S08', title: '最近一次检查', note: '10-18 体重 50.6 kg；MSLT 5.2 分钟；HLA 还没测', action: 'go-metrics-latest' },
+      { key: 'admin', scenario: 'S06', title: '办事材料', note: '学校要病情说明；体育课免修也要材料', action: 'go-admin' }
     ]
   }
 };
@@ -241,6 +306,13 @@ window.ESS_ITEMS = [
   '午餐后安静坐着（未饮酒）',
   '驾车等红灯或堵车几分钟时'
 ];
+
+/* 指标按档案派生：必须在 naps/nights/ess 都定下来之后才能算，
+   所以放在文件末尾一次性填进 DEMO_DATA.metrics（避免上面手抄第二份数字）。 */
+DEMO_DATA.metrics = {};
+for (const key of Object.keys(PROFILES)) {
+  DEMO_DATA.metrics[key] = makeMetrics(key, DEMO_DATA.naps[key], DEMO_DATA.nights[key], DEMO_DATA.ess[key]);
+}
 
 window.DEMO_DATA = DEMO_DATA;
 

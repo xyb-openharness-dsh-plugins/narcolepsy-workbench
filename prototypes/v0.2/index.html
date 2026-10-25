@@ -10,13 +10,16 @@
 </head>
 <body>
 <a class="skip" href="#main">跳到主要内容</a>
-<div class="prototype-bar"><span><b>交互原型 v0.1.0</b> · 全部为模拟资料（临床试验条目另见 data/trials/，本轮尚未采集）</span><span>仅本页演示 · 刷新重置 · 未接入 DSH / AI</span></div>
+<div class="prototype-bar"><span><b>交互原型 v0.1.0</b> · 患者资料全部为模拟；临床试验条目来自 data/trials/ 真跑采集（2026-10-25 · 200 条）</span><span>仅本页演示 · 刷新重置 · 未接入 DSH / 模型</span></div>
 <div class="workspace">
   <aside class="sidebar" aria-label="小睡宝业务导航">
-    <div class="brand no-mark"><div><strong>小睡宝</strong><span>SnoozePal · 发作先记清</span></div></div>
+    <!-- 品牌是按钮：文档定义「顶栏品牌 = 回首页」（INTERACTION-DESIGN §1）。评审 P0-3 之前它是 <div>，点了没反应。 -->
+    <button class="brand no-mark" data-action="home" aria-label="回首页：看板今日概览">
+      <span class="brand-text"><strong>小睡宝</strong><span>SnoozePal · 发作先记清</span></span>
+    </button>
     <button class="profile" id="profile-btn" data-action="profiles" aria-label="切换演示档案，当前为陈默">
-      <div class="avatar" id="profile-avatar" aria-hidden="true">陈</div>
-      <div class="profile-meta-line"><b id="profile-name">陈默的资料</b><span id="profile-meta">27 岁 · 伴猝倒</span></div>
+      <span class="avatar" id="profile-avatar" aria-hidden="true">陈</span>
+      <span class="profile-meta-line"><b id="profile-name">陈默的资料</b><span id="profile-meta">27 岁 · 伴猝倒</span></span>
       <span class="profile-caret" aria-hidden="true">⌄</span>
     </button>
     <nav id="nav" aria-label="一级导航"></nav>
@@ -46,9 +49,14 @@
           </div>
           <button class="icon-button" data-action="agent" aria-label="隐藏 AI 对话面板" title="隐藏">×</button>
         </div>
-        <div class="agent-body" id="agent-body"></div>
+        <div class="agent-body" id="agent-body" role="log" aria-live="polite"></div>
         <div class="agent-foot">
+          <!-- 评审 P0-6：之前这里没有输入框，候选卡是硬编码常量，跟"你说的话"没关系。
+               现在有一条真的输入 → 真的解析 → 真的候选卡链路（解析规则写在本文件，模型未接入）。 -->
+          <label class="agent-input-label" for="agent-input">说一句话，我先给你候选卡</label>
+          <textarea id="agent-input" rows="2" placeholder="例如：下午三点半开会睡着了，大概二十分钟"></textarea>
           <div class="agent-actions">
+            <button class="primary" data-action="agent-send">发送</button>
             <button data-action="agent-build">整理本页要点</button>
             <button data-action="agent-demo">模拟回复自检</button>
           </div>
@@ -58,6 +66,21 @@
     <footer class="footer">小睡宝 · 与发作性睡病患者和照护者一起记录、理解、准备沟通 <span class="ver-line"><b id="app-version">v0.1.0</b><em id="app-build">2026-10-25</em></span></footer>
   </div>
 </div>
+
+<!-- 整页视图（32 号）：同一层遮罩 + 一层导航栈，Esc 退一层，返回键等价 back，#page= 可刷新还原 -->
+<div id="page-view" class="page-view" hidden aria-hidden="true">
+  <div class="pv-scrim" data-action="pv-close"></div>
+  <section class="pv-panel" role="dialog" aria-modal="true" aria-labelledby="pv-title">
+    <header class="pv-head">
+      <button class="pv-btn" data-action="pv-back">← 返回</button>
+      <div class="pv-title-wrap"><span class="eyebrow" id="pv-eyebrow">小睡宝</span><h2 id="pv-title">整页</h2></div>
+      <div class="pv-head-actions" id="pv-actions"></div>
+      <button class="pv-btn pv-x" data-action="pv-close" aria-label="关闭整页">×</button>
+    </header>
+    <div class="pv-body" id="pv-body" tabindex="-1"></div>
+  </section>
+</div>
+
 <dialog id="dialog" aria-labelledby="dialog-title">
   <div class="dialog-head"><div><span class="eyebrow" id="dialog-eyebrow">小睡宝</span><h2 id="dialog-title"></h2></div><button class="icon-button" data-action="close" aria-label="关闭弹窗">×</button></div>
   <div id="dialog-body" class="dialog-body"></div>
@@ -65,5 +88,6 @@
 </dialog>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 <script src="demo-data.js"></script>
+<script src="demo-trials.js"></script>
 <script src="app.js"></script>
 </body></html>
