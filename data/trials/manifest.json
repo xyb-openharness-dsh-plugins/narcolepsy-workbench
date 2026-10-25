@@ -1,0 +1,43 @@
+{
+  "generated_at": "2026-10-25T05:14:21.430Z",
+  "disease": "narcolepsy",
+  "query": {
+    "ctv": "query.cond=narcolepsy&pageSize=100&fields=NCTId,BriefTitle,OverallStatus,Phase,EnrollmentCount,StartDate,CompletionDate,LeadSponsorName,LocationCountry",
+    "ictrp": "POST https://trialsearch.who.int/ TextBox1=narcolepsy + Button1=Search",
+    "chictr_online": "GET https://www.chictr.org.cn/searchproj.html（被 405 阻断）",
+    "chinadrugtrials": "POST https://www.chinadrugtrials.org.cn/clinicaltrials.searchlist.dhtml keywords=发作性睡病"
+  },
+  "channels": [
+    {
+      "id": "ctv",
+      "status": "ready",
+      "count": 176,
+      "note": "totalCount=176，2 页全部取回",
+      "fetched_at": "2026-10-25T05:14:21.430Z"
+    },
+    {
+      "id": "ictrp",
+      "status": "partial",
+      "count": 10,
+      "note": "上游检索页自称 397 records / 279 trials，但 ASP.NET 回发翻页（__EVENTTARGET=GridView1）与 Export to CSV/XML 都被 WAF 重定向到 NoAccess.aspx，只能落到第 1 页的 10 行",
+      "fetched_at": "2026-10-25T05:14:21.430Z"
+    },
+    {
+      "id": "chictr_online",
+      "status": "unsupported",
+      "count": 0,
+      "note": "无可用的公开机读检索接口：/searchproj.html → HTTP 405；/bin/chictr/website/searchProject → HTTP 200（返回 非法访问 报文）。0 条不代表无相关研究——该库以中文注册为主，本通道本轮未查通（未查过）。",
+      "fetched_at": "2026-10-25T05:14:21.430Z"
+    },
+    {
+      "id": "chinadrugtrials",
+      "status": "ready",
+      "count": 14,
+      "note": "页面自称共 14 条，已全部解析",
+      "fetched_at": "2026-10-25T05:14:21.430Z"
+    }
+  ],
+  "totals": {
+    "records": 200
+  }
+}

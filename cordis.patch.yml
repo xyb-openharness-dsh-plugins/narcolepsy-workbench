@@ -1,0 +1,15 @@
+- insert:
+    - id: narcolepsy-workbench
+      name: '@snoozepal-dsh/narcolepsy-workbench'
+      config:
+        root: !!js dshHomePath('narcolepsy-workbench')
+# 把服务端入口插进 Harness 的插件树（workbench-standard §3.3）。注释放条目之后，不放文件首行。
+#
+# 两条硬规则：
+# 1. name 必须写 npm 包名，写相对路径或绝对路径 Node 解析不到；
+# 2. 空文件或纯注释文件会导致启动失败——有条目就照上面写，没有条目时写 `[]`。
+#
+# config.root 用 dshHomePath('<slug>') 解析到用户资料目录；id 与 root 的取值
+# 由 lib/identity.js 定义、scripts/check-workbench-package.mjs 比对，别手改这里。
+# root 必须与 dsh/index.js 的 DB_FILE 约定一致（xyb-narcolepsy.sqlite），
+# 且不能退回桌面/下载根目录——宿主只认 dshHomePath 解析出来的用户资料目录。
