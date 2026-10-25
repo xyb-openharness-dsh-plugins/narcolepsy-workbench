@@ -346,7 +346,7 @@ function metricCard(m) {
   const track = TRACKS[m.track] || { label: '未分轨', color: '#6b7a90' };
   const pts = m.points || [];
   /* 分类型：最近值是类别字符串，不参与差值 */
-  const isCat = m.kind === 'category';
+  const isCat = m.kind === 'qual' || m.kind === 'grade';
   const numeric = pts.filter((p) => typeof p.v === 'number');
   const lastP = pts[pts.length - 1];
   const prevNum = numeric.length > 1 ? numeric[numeric.length - 2] : null;

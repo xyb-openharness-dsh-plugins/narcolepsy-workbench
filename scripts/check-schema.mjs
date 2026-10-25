@@ -42,8 +42,10 @@ try {
   problems.push(`迁移执行失败：${error.message}`)
 }
 
-const tables = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name").all().map((r) => r.name)
-const expected = ['candidates', 'documents', 'ess_sessions', 'events', 'med_tolerance', 'meds', 'meta', 'metrics', 'naps', 'night_events', 'profile', 'questions', 'viewpoints']
+// 排除 sqlite_ 内部表：sqlite_sequence 是 AUTOINCREMENT 自动建的，它不属于业务表，
+// 也不该被"每张业务表都要 profile_key"这条断言扫到。
+const tables = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name").all().map((r) => r.name)
+const expected = ['candidates', 'documents', 'ess_sessions', 'events', 'med_tolerance', 'meds', 'meta', 'metrics', 'naps', 'night_events', 'profile', 'profile_exam', 'questions', 'viewpoints']
 for (const name of expected) check(tables.includes(name), `表存在：${name}`)
 
 // 判读列断言：任何表都不许有

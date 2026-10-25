@@ -20,6 +20,7 @@ import { fileURLToPath } from 'node:url'
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const SRC = join(ROOT, 'data/trials/trials.jsonl')
 const OUT = join(ROOT, 'prototypes/v0.2/demo-trials.js')
+const OUT_PUBLIC = join(ROOT, 'public/demo-trials.js')
 const checkOnly = process.argv.includes('--check')
 
 if (!existsSync(SRC)) {
@@ -108,13 +109,16 @@ const body = `(function () {\nwindow.DEMO_TRIALS = ${JSON.stringify(payload, nul
 const text = header + body
 
 if (checkOnly) {
-  const cur = existsSync(OUT) ? await readFile(OUT, 'utf8') : ''
-  if (cur !== text) {
-    console.error('✗ prototypes/v0.2/demo-trials.js 与 data/trials/trials.jsonl 不一致。重新跑 node scripts/build-demo-trials.mjs')
-    process.exit(1)
+  for (const target of [OUT, OUT_PUBLIC]) {
+    const cur = existsSync(target) ? await readFile(target, 'utf8') : ''
+    if (cur !== text) {
+      console.error(`✗ ${target.slice(ROOT.length + 1)} 与 data/trials/trials.jsonl 不一致。重新跑 node scripts/build-demo-trials.mjs`)
+      process.exit(1)
+    }
   }
-  console.log(`✓ 原型试验数据与源数据一致：${payload.total} 条 · 采集于 ${payload.generatedAt}`)
+  console.log(`✓ 原型与开发版的试验数据都与源数据一致：${payload.total} 条 · 采集于 ${payload.generatedAt}`)
 } else {
   await writeFile(OUT, text, 'utf8')
-  console.log(`✓ 已生成 prototypes/v0.2/demo-trials.js：${payload.total} 条 · 采集于 ${payload.generatedAt}`)
+  await writeFile(OUT_PUBLIC, text, 'utf8')
+  console.log(`✓ 已生成 prototypes/v0.2/demo-trials.js + public/demo-trials.js：${payload.total} 条 · 采集于 ${payload.generatedAt}`)
 }

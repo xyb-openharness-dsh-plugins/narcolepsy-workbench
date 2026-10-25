@@ -18,9 +18,11 @@
 --    索引顺序仍然不是插入顺序）；
 -- ③ metrics.kind 只表达"怎么画"，不表达"严不严重"。
 
-PRAGMA foreign_keys = OFF;
-
-BEGIN;
+-- 事务与外键开关由 dsh/store.js 的 migrate() 统一负责（SQLite 的 PRAGMA foreign_keys
+-- 在事务内是 no-op，所以不能在迁移文件里自己开关）。本文件只写 DDL 与搬数据。
+--
+-- 表重建期间外键是关的：13 张表按 rename→create→copy→drop→rename 顺序搬，
+-- 每张表都是 1:1 复制，中间不会有孤儿行；搬完下一次开库外键自动恢复检查。
 
 -- ① 档案级：一行一个档案，主键从 CHECK(id=1) 改成 profile_key
 CREATE TABLE profile_new (
@@ -175,7 +177,7 @@ ALTER TABLE documents_new RENAME TO documents;
 CREATE TABLE candidates_new (
   profile_key TEXT    NOT NULL,
   id          INTEGER PRIMARY KEY,
-  document_id INTEGER NOT NULL REFERENCES documents_new(id),
+  document_id INTEGER NOT NULL REFERENCES documents(id),
   field       TEXT    NOT NULL,
   value_text  TEXT    NOT NULL,
   status      TEXT    NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','accepted','rejected')),
@@ -244,6 +246,3 @@ CREATE INDEX IF NOT EXISTS idx_candidates_doc     ON candidates(document_id, sta
 CREATE INDEX IF NOT EXISTS idx_questions_profile  ON questions(profile_key, ord);
 CREATE INDEX IF NOT EXISTS idx_meds_profile       ON meds(profile_key, ord);
 
-COMMIT;
-
-PRAGMA foreign_keys = ON;

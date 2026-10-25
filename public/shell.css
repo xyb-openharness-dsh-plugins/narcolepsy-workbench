@@ -1,0 +1,29 @@
+/* 小睡宝 SnoozePal · 宿主外壳里的补充样式（只在 iframe 内生效）
+ *
+ * 为什么要有这个文件、而且只有这几条：
+ *   `style.css` 与 `prototypes/v0.2/style.css` **逐字节相同**（parity 的硬要求），
+ *   所以任何"只在宿主里才成立"的调整都不能写进 style.css —— 那会让两边漂移。
+ *   这类调整统一放这里，并且一律挂在 `body.hosted` 下：独立启动预览时 body 没有这个类，
+ *   页面与原型完全一致。
+ *
+ * 本文件只在 `window.parent !== window`（真的装在 DSH 里）时才可能生效 ——
+ * 由 `public/app.js` 在启动时给 body 加 `hosted` 类。
+ */
+
+/* 1) 宿主外壳已经提供了顶栏（品牌、AI 对话、设置）与版本条。
+      页面里再画一条就是两条顶栏，挤占业务区高度，也会让人分不清哪个是真的。 */
+body.hosted .topbar,
+body.hosted .prototype-bar { display: none !important; }
+
+/* 2) 会话区由宿主挂载（customFrame=true 时宿主把会话节点交给本插件，但那是**外壳**的事，
+      不是这个 iframe 的事）。iframe 里再放一个会话面板 = 两个输入框，人不知道往哪说。 */
+body.hosted #agent-dock { display: none !important; }
+
+/* 3) iframe 里没有整页滚动条：滚动发生在工作区内部，body 高度交给宿主。 */
+body.hosted { min-height: 0; background: var(--paper); }
+body.hosted .workspace { grid-template-columns: 236px minmax(0, 1fr); min-height: 100vh; }
+body.hosted .work-area { min-height: 100vh; }
+
+/* 4) 标准分栏的窗口按钮避让量：宿主外壳会注入 --dsh-frame-leading-clearance；
+      这里只保证万一被塞进非 customFrame 的窗格里时，侧边栏留得出这段空隙。 */
+body.hosted .sidebar { padding-inline-start: calc(14px + var(--dsh-frame-leading-clearance, 0px)); }

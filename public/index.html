@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<!-- 开发版页面不进任何索引：它读的是本机资料目录，被搜索引擎抓到就是泄漏 -->
+<meta name="robots" content="noindex,nofollow">
+<title>小睡宝 SnoozePal · 发作性睡病工作台 v0.1.0</title>
+<!-- 内联 favicon：原型走 file:// 或单目录静态托管，不给 favicon 会在控制台留一条 404 -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%235b67d8'/%3E%3Ctext x='16' y='23' font-size='19' font-family='PingFang SC,Helvetica,sans-serif' font-weight='700' fill='%23fff' text-anchor='middle'%3E%E7%9D%A1%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="shell.css">
+</head>
+<body>
+<a class="skip" href="#main">跳到主要内容</a>
+<div class="prototype-bar"><span><b>开发版 v0.1.0</b> · 数据来自本机资料目录；演示档案为模拟资料，临床试验条目来自 data/trials/ 真跑采集（2026-10-25 · 200 条）</span><span>同一份渲染代码 · 与 <code>prototypes/v0.2/</code> 逐字符对齐</span></div>
+<div class="workspace">
+  <aside class="sidebar" aria-label="小睡宝业务导航">
+    <!-- 品牌是按钮：文档定义「顶栏品牌 = 回首页」（INTERACTION-DESIGN §1）。评审 P0-3 之前它是 <div>，点了没反应。 -->
+    <button class="brand no-mark" data-action="home" aria-label="回首页：看板今日概览">
+      <span class="brand-text"><strong>小睡宝</strong><span>SnoozePal · 发作先记清</span></span>
+    </button>
+    <button class="profile" id="profile-btn" data-action="profiles" aria-label="切换演示档案，当前为陈默">
+      <span class="avatar" id="profile-avatar" aria-hidden="true">陈</span>
+      <span class="profile-meta-line"><b id="profile-name">陈默的资料</b><span id="profile-meta">27 岁 · 伴猝倒</span></span>
+      <span class="profile-caret" aria-hidden="true">⌄</span>
+    </button>
+    <nav id="nav" aria-label="一级导航"></nav>
+    <div class="sidebar-bottom"><span class="eyebrow">小 X 宝家族</span><p>犯困不是懒，<br>记下来才有人接住。</p><button class="text-button" data-action="help">原型操作说明 ↗</button></div>
+  </aside>
+  <div class="work-area">
+    <header class="topbar">
+      <div class="breadcrumb">小睡宝工作台 <span>/</span> <b id="breadcrumb">看板</b></div>
+      <div class="top-actions">
+        <button class="status" data-action="open-store" aria-label="资料目录：已激活"><i></i><span>资料目录</span><b>已激活</b></button>
+        <button class="status" id="agent-toggle" data-action="agent" aria-expanded="false" aria-label="AI 对话：点击打开右侧原生会话面板"><i class="grey"></i><span>AI 对话</span><b id="agent-state">未进入激活</b></button>
+        <button data-action="settings" aria-label="打开设置：工作区目录、文档解析">设置</button>
+        <button id="font-toggle" aria-pressed="false" title="切换大字">大字 Aa</button>
+        <button class="ver-chip" id="ver-chip" data-action="about" aria-label="关于小睡宝：查看版本号与构建信息">v0.1.0</button>
+      </div>
+    </header>
+    <div class="work-grid" id="work-grid">
+      <main id="main" tabindex="-1"></main>
+      <aside class="agent-dock" id="agent-dock" aria-label="AI 原生会话面板" hidden>
+        <div class="agent-head">
+          <span class="dot" id="agent-dot"></span><b>AI 对话</b>
+          <div class="spacer"></div>
+          <div class="agent-sizes" role="group" aria-label="面板宽度">
+            <button data-action="agent-size" data-size="narrow" aria-pressed="false" title="窄">窄</button>
+            <button data-action="agent-size" data-size="std" aria-pressed="true" title="标准">标准</button>
+            <button data-action="agent-size" data-size="wide" aria-pressed="false" title="宽">宽</button>
+          </div>
+          <button class="icon-button" data-action="agent" aria-label="隐藏 AI 对话面板" title="隐藏">×</button>
+        </div>
+        <div class="agent-body" id="agent-body" role="log" aria-live="polite"></div>
+        <div class="agent-foot">
+          <!-- 评审 P0-6：之前这里没有输入框，候选卡是硬编码常量，跟"你说的话"没关系。
+               现在有一条真的输入 → 真的解析 → 真的候选卡链路（解析规则写在本文件，模型未接入）。 -->
+          <label class="agent-input-label" for="agent-input">说一句话，我先给你候选卡</label>
+          <textarea id="agent-input" rows="2" placeholder="例如：下午三点半开会睡着了，大概二十分钟"></textarea>
+          <div class="agent-actions">
+            <button class="primary" data-action="agent-send">发送</button>
+            <button data-action="agent-build">整理本页要点</button>
+            <button data-action="agent-demo">模拟回复自检</button>
+          </div>
+        </div>
+      </aside>
+    </div>
+    <footer class="footer">小睡宝 · 与发作性睡病患者和照护者一起记录、理解、准备沟通 <span class="ver-line"><b id="app-version">v0.1.0</b><em id="app-build">2026-10-25</em></span></footer>
+  </div>
+</div>
+
+<!-- 整页视图（32 号）：同一层遮罩 + 一层导航栈，Esc 退一层，返回键等价 back，#page= 可刷新还原 -->
+<div id="page-view" class="page-view" hidden aria-hidden="true">
+  <div class="pv-scrim" data-action="pv-close"></div>
+  <section class="pv-panel" role="dialog" aria-modal="true" aria-labelledby="pv-title">
+    <header class="pv-head">
+      <button class="pv-btn" data-action="pv-back">← 返回</button>
+      <div class="pv-title-wrap"><span class="eyebrow" id="pv-eyebrow">小睡宝</span><h2 id="pv-title">整页</h2></div>
+      <div class="pv-head-actions" id="pv-actions"></div>
+      <button class="pv-btn pv-x" data-action="pv-close" aria-label="关闭整页">×</button>
+    </header>
+    <div class="pv-body" id="pv-body" tabindex="-1"></div>
+  </section>
+</div>
+
+<dialog id="dialog" aria-labelledby="dialog-title">
+  <div class="dialog-head"><div><span class="eyebrow" id="dialog-eyebrow">小睡宝</span><h2 id="dialog-title"></h2></div><button class="icon-button" data-action="close" aria-label="关闭弹窗">×</button></div>
+  <div id="dialog-body" class="dialog-body"></div>
+  <div id="dialog-foot" class="dialog-foot"></div>
+</dialog>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script src="demo-data.js"></script>
+<script src="demo-trials.js"></script>
+<script src="app.js"></script>
+</body></html>

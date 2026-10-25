@@ -158,7 +158,14 @@ test('0002 迁移不丢行：单档案数据整批变成 profile_key=A', () => {
   const business = ['profile', 'naps', 'ess_sessions', 'night_events', 'meds', 'med_tolerance', 'metrics', 'documents', 'candidates', 'questions', 'viewpoints', 'events']
   const before = Object.fromEntries(business.map((t) => [t, db.prepare(`SELECT COUNT(*) c FROM ${t}`).get().c]))
 
+  /* 外键开关与事务归 dsh/store.js 的 migrate() 统一负责（SQLite 的 PRAGMA foreign_keys
+     在事务内是 no-op）。这里手工跑一个迁移文件，必须照 runner 的做法来：
+     先关外键 → BEGIN → 执行 → COMMIT → 再开。0002 是整表重建，FK 开着 drop 不掉被引用的表。 */
+  db.exec('PRAGMA foreign_keys = OFF')
+  db.exec('BEGIN')
   db.exec(readFileSync('schema/0002_multi_profile.sql', 'utf8'))
+  db.exec('COMMIT')
+  db.exec('PRAGMA foreign_keys = ON')
 
   for (const t of business) {
     assert.equal(db.prepare(`SELECT COUNT(*) c FROM ${t}`).get().c, before[t], `${t} 行数迁移前后不一致`)

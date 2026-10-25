@@ -12,7 +12,7 @@
 | M3 数据模型 | `schema/0001_initial.sql` + `freeze-contract.md`(sha256) + 判读列断言 | 无 `diagnosis/risk_level/severity` 列；列一致性检查绿 | 🔧 schema 已冻结（sha `0721ec15…`），待 G3 签 |
 | G3 | 数据契约签认 | 冻结合同 + 列断言 | ⏳ |
 | M4 临床库 | `scripts/fetch-narcolepsy-trials-2026.mjs` + 四件套 | manifest=jsonl=sqlite 行数一致；FAILED 记「未查过」 | ✅ 2026-10-25 实测 200 条（176/10/0/14），三处行数一致 |
-| M5 开发版 | 七步移植 + apiBase 契约 + 五套测试 + check 全绿 + HVT 一致性 | `npm run check` 全绿 + parity >98% | ⏳ |
+| M5 开发版 | 七步移植 + apiBase 契约 + 五套测试 + check 全绿 + HVT 一致性 | `npm run check` 全绿 + parity >98% | 🔧 2026-10-25 移植完成：`check` 全绿（57 tests / staticPass / 文案 23 文件 / README 20 图）；`audit` 33/33；`check:ui` 17/17（真 HTTP + 真 sqlite + 真浏览器，`dataSource=api`）；`check:proto` 90/90、`check:ix` 94/94。**未闭合**：写接口属 M6+，开发版 10 处写入口统一如实拦（只读），所以 HVT X3「CRUD 双通道一致」这一项还没到能签的程度 |
 | V1 | 检查链通过 | 证据写 docs/RELEASE.md | ⏳ |
 | M6 装机 | 升版 → pack → 四要素对照 → 装 profile → bundles 登记 → 重启后新建会话 → 真机走查 | 四要素齐；真机截图 | ⏳ |
 | V2/V3 | 装机 + 真机业务闭环 | 用户实机确认 | ⏳ |

@@ -22,9 +22,18 @@
  */
 import { existsSync, readFileSync } from 'node:fs'
 
+/* 只认**代码**，不认注释。
+   踩过（2026-10-25 发作性睡病 M5）：`lib/client.js` 的生成物头部注释里写着
+   `* 面板 customFrame=true · 业务 left 0.65`，下面第 4 条正则取"第一处 customFrame"
+   就取到了注释里的那段说明，于是报 `customFrame 不是 true/false 字面量：
+   true · 业务 left 0.65` —— 代码是对的，检查器自己读错了。
+   注释剥掉再匹配；不改生成物头部注释，那份注释是给人看的。 */
+const stripComments = (src) => src.replace(/\/\*[\s\S]*?\*\//g, '')
 const read = (p) => (existsSync(p) ? readFileSync(p, 'utf8') : '')
-const client = read('lib/client.js')
-const layout = read('lib/layout.js')
+const clientRaw = read('lib/client.js')
+const layoutRaw = read('lib/layout.js')
+const client = stripComments(clientRaw)
+const layout = stripComments(layoutRaw)
 const both = `${client}\n${layout}`
 const problems = []
 const notes = []

@@ -14,6 +14,9 @@
   "files": [
     "dsh",
     "lib",
+    "public",
+    "schema",
+    "demo",
     "assets",
     "docs/screenshots",
     "cordis.patch.yml",
@@ -21,12 +24,13 @@
     "NOTICE.md"
   ],
   "scripts": {
-    "check": "node --check dsh/index.js && node --check lib/client.js && node --check lib/layout.js && node scripts/build-version.mjs --check && node scripts/check-schema.mjs && node scripts/check-wording.mjs && node scripts/check-readme-assets.mjs . && node scripts/build-demo-trials.mjs --check && node --test test/*.test.mjs && node scripts/check-workbench-package.mjs . && node scripts/check-host-contract.mjs",
+    "check": "node --check dsh/index.js && node --check dsh/store.js && node --check dsh/server.js && node --check dsh/routes.js && node --check dsh/workbench.js && node --check dsh/demo.js && node --check dsh/readmodels.js && node --check dsh/metric-catalog.js && node --check public/app.js && node --check lib/client.js && node --check lib/layout.js && node scripts/build-version.mjs --check && node scripts/check-version.mjs && node scripts/check-schema.mjs && node scripts/check-wording.mjs && node scripts/check-readme-assets.mjs . && node scripts/build-client.mjs --check && node scripts/build-demo-trials.mjs --check && node demo/build-demo-data.mjs --check && node --test test/*.test.mjs && node scripts/check-workbench-package.mjs . && node scripts/check-host-contract.mjs",
+    "test": "node --test test/*.test.mjs",
     "check:proto": "node scripts/probe-prototype.mjs",
     "check:ix": "node scripts/probe-interactions.mjs",
+    "check:ui": "node scripts/probe-ui.mjs",
     "check:host": "node scripts/check-host-contract.mjs",
     "check:readme": "node scripts/check-readme-assets.mjs .",
-    "test": "node --test test/*.test.mjs",
     "audit": "node scripts/check-conformance.mjs .",
     "release:check": "npm run check && npm run test && npm run audit",
     "pack:check": "npm pack --dry-run",
@@ -34,7 +38,13 @@
     "probe:tabs": "python3 scripts/verify-tabs-on-artifact.py",
     "probe:page-view": "node scripts/probe-page-view.mjs",
     "fetch:trials": "node scripts/fetch-narcolepsy-trials-2026.mjs",
-    "probe:proto": "node scripts/probe-prototype.mjs"
+    "probe:proto": "node scripts/probe-prototype.mjs",
+    "start": "node scripts/dev-server.mjs",
+    "build:demo": "node demo/build-demo-data.mjs",
+    "check:demo": "node demo/build-demo-data.mjs --check",
+    "build:version": "node scripts/build-version.mjs",
+    "build:client": "node scripts/build-client.mjs",
+    "check:version": "node scripts/check-version.mjs"
   },
   "dsh": {
     "bundle": {
