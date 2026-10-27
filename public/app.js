@@ -18,11 +18,11 @@
 'use strict';
 
 const APP_INFO = {
-  version: '0.1.1',
+  version: '0.1.2',
   channel: 'dev',
   channelLabel: '开发版 · 数据仅在本机',
   build: '2026-10-27',
-  displayVersion: 'v0.1.1'
+  displayVersion: 'v0.1.2'
 };
 
 const $ = (s, root = document) => root.querySelector(s);
