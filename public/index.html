@@ -5,15 +5,16 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <!-- 开发版页面不进任何索引：它读的是本机资料目录，被搜索引擎抓到就是泄漏 -->
 <meta name="robots" content="noindex,nofollow">
-<title>小睡宝 SnoozePal · 发作性睡病工作台 v0.1.0</title>
+<title>小睡宝 SnoozePal · 发作性睡病工作台 v0.1.1</title>
 <!-- 内联 favicon：原型走 file:// 或单目录静态托管，不给 favicon 会在控制台留一条 404 -->
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%235b67d8'/%3E%3Ctext x='16' y='23' font-size='19' font-family='PingFang SC,Helvetica,sans-serif' font-weight='700' fill='%23fff' text-anchor='middle'%3E%E7%9D%A1%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="shell.css">
+<link rel="stylesheet" href="primer.css">
 </head>
 <body>
 <a class="skip" href="#main">跳到主要内容</a>
-<div class="prototype-bar"><span><b>开发版 v0.1.0</b> · 数据来自本机资料目录；演示档案为模拟资料，临床试验条目来自 data/trials/ 真跑采集（2026-10-25 · 200 条）</span><span>同一份渲染代码 · 与 <code>prototypes/v0.2/</code> 逐字符对齐</span></div>
+<div class="prototype-bar"><span><b>开发版 v0.1.1</b> · 数据来自本机资料目录；演示档案为模拟资料，临床试验条目来自 data/trials/ 真跑采集（2026-10-25 · 200 条）</span><span>同一份渲染代码 · 与 <code>prototypes/v0.2/</code> 逐字符对齐</span></div>
 <div class="workspace">
   <aside class="sidebar" aria-label="小睡宝业务导航">
     <!-- 品牌是按钮：文档定义「顶栏品牌 = 回首页」（INTERACTION-DESIGN §1）。评审 P0-3 之前它是 <div>，点了没反应。 -->
@@ -36,7 +37,8 @@
         <button class="status" id="agent-toggle" data-action="agent" aria-expanded="false" aria-label="AI 对话：点击打开右侧原生会话面板"><i class="grey"></i><span>AI 对话</span><b id="agent-state">未进入激活</b></button>
         <button data-action="settings" aria-label="打开设置：工作区目录、文档解析">设置</button>
         <button id="font-toggle" aria-pressed="false" title="切换大字">大字 Aa</button>
-        <button class="ver-chip" id="ver-chip" data-action="about" aria-label="关于小睡宝：查看版本号与构建信息">v0.1.0</button>
+        <button class="ver-chip" id="ver-chip" data-action="about" aria-label="关于小睡宝：查看版本号与构建信息">v0.1.1</button>
+        <button class="dp-trigger" type="button" data-primer-open aria-haspopup="dialog" aria-controls="disease-primer" aria-label="疾病概要：定义、医学资料与指南情况、治疗全景、发展趋势" title="疾病概要：定义 · 指南 · 治疗全景 · 趋势">?</button>
       </div>
     </header>
     <div class="work-grid" id="work-grid">
@@ -66,7 +68,7 @@
         </div>
       </aside>
     </div>
-    <footer class="footer">小睡宝 · 与发作性睡病患者和照护者一起记录、理解、准备沟通 <span class="ver-line"><b id="app-version">v0.1.0</b><em id="app-build">2026-10-25</em></span></footer>
+    <footer class="footer">小睡宝 · 与发作性睡病患者和照护者一起记录、理解、准备沟通 <span class="ver-line"><b id="app-version">v0.1.1</b><em id="app-build">2026-10-25</em></span></footer>
   </div>
 </div>
 
@@ -92,5 +94,7 @@
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 <script src="demo-data.js"></script>
 <script src="demo-trials.js"></script>
+<script src="primer-data.js"></script>
+<script src="primer.js"></script>
 <script src="app.js"></script>
 </body></html>

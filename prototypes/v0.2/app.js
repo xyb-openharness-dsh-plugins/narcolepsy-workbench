@@ -444,6 +444,46 @@ function vDashboard() {
   if (sub === 1) return vDashWeek();
   return vDashTodo();
 }
+/* 36 号 §2.6 · 看板病程状态卡（疾病概要的触发器）
+ * 天数与下次日期一律由记录派生，不手填；没有锚点就显示「待初始化」并指向三步向导。
+ * 锚点 = 事件里第一条「确诊」门诊；下次复诊 = 问题清单里最近一个未来的 forVisit。 */
+function primerAnchorDate(profile) {
+  const ev = (EVENTS[profile] || []).find((e) => e.kind === 'visit' && /确诊/.test(String(e.label || '')));
+  return ev ? String(ev.at).slice(0, 10) : null;
+}
+function primerNextVisit(profile) {
+  const items = (QUESTIONS[profile] || [])
+    .map((q) => String(q.forVisit || ''))
+    .map((raw) => ({ raw, date: (raw.match(/\d{4}-\d{2}-\d{2}/) || [])[0] }))
+    .filter((x) => x.date && x.date >= NOW)
+    .sort((a, b) => a.date.localeCompare(b.date));
+  if (!items.length) return null;
+  const first = items[0];
+  return { date: first.date, item: first.raw.replace(first.date, '').trim() || '复诊' };
+}
+function statusCard() {
+  const p = P();
+  if (!p) return '';
+  const anchor = primerAnchorDate(state.profile);
+  const next = primerNextVisit(state.profile);
+  const day = anchor ? Math.max(0, daysAgo(anchor)) : null;
+  const eyebrow = day == null ? '状态卡 · 待初始化' : `D+${day} 状态卡 · 距下次复诊`;
+  const dayLine = day == null
+    ? `<div class="status-day pending"><b>待初始化</b><span>还没有可用的确诊日锚点</span></div>`
+    : `<div class="status-day"><b>第 ${day} 天</b><span>自确诊日 ${esc(anchor)} 起算</span></div>`;
+  const nowLine = day == null
+    ? `<div class="status-now"><b>三步初始化：</b>① 在「确诊档案」看诊断原文 ② 在「嗜睡发作」记第一条 ③ 在「复诊准备」记下次门诊。${pill('待初始化', 'amber')}</div>`
+    : `<div class="status-now"><b>${esc(p.dx)}</b>${pill('已确诊 · 记录中', 'violet')}${next ? `<span class="status-next">下次：${esc(next.date)}（${esc(next.item)}复诊）</span>` : '<span class="status-next">下次复诊日期未记录</span>'}</div>`;
+  return `<section class="card status-card" aria-labelledby="status-card-title">
+    <span class="eyebrow" id="status-card-title">${esc(eyebrow)}</span>
+    ${dayLine}
+    ${nowLine}
+    <div class="status-actions">
+      <button class="primary" data-action="go-visit">看复诊准备（问题清单）→</button>
+      <button class="soft" type="button" data-primer-open aria-haspopup="dialog" aria-controls="disease-primer" aria-label="疾病概要：定义、医学资料与指南情况、治疗全景、发展趋势">疾病概要：发作性睡病是什么？</button>
+    </div>
+  </section>`;
+}
 function vDashToday() {
   const p = P();
   const naps = NAPS[state.profile];
@@ -454,6 +494,7 @@ function vDashToday() {
   /* 看板复用指标卡组件（同一个函数），取最新 4 项：量表 + 发作 + 夜间 + 体征 */
   const spotlight = ['ess_total', 'nap_median_min', 'awakening_count', 'weight'];
   return `${pageHead()}
+  ${statusCard()}
   <div class="hero"><div class="avatar-big" aria-hidden="true">${esc(p.initial)}</div>
     <div class="hero-main"><h2>${esc(p.name)}，${esc(p.meta)}</h2>
       <p>${esc(p.headline)}</p>
