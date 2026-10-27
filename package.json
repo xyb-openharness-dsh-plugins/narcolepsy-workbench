@@ -1,6 +1,6 @@
 {
   "name": "@snoozepal-dsh/narcolepsy-workbench",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "本机优先的发作性睡病嗜睡发作时段日志、ESS 量表序列、夜间睡眠事件、管制药耐受与就诊准备工作台",
   "private": true,
   "type": "module",
