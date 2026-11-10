@@ -199,6 +199,15 @@
         return workbenchOwnsSession(id) ? id : null
       }
 
+      /* 会话创建：优先默认工作区；无可用工作区时传 undefined，让宿主按其流程提示选目录。
+         不要用 ensureSession({})：customFrame 下它不保证归属，也不会自动挂载面板。 */
+      async function createOwnedSession() {
+        const service = bridge?.desktopWorkbenches
+        let workspaceId
+        try { workspaceId = service?.defaultWorkspace?.()?.workspaceId } catch { workspaceId = undefined }
+        return service.newSession(workspaceId)
+      }
+
       /* ---------------- 原生草稿：只填入，不发送 ---------------- */
 
       function fillDraft(sessionId, prompt) {
@@ -264,8 +273,12 @@
         const dragHostRef = React.useRef(null)
         const frameRef = React.useRef(null)
 
-        const hasConversation = Boolean(conversation)
-        const canOpenSession = typeof bridge?.desktopWorkbenches?.ensureSession === 'function'
+        const [paneTick, setPaneTick] = React.useState(0)
+        /* 会话归属只问宿主：ownedSession() = ownsSession(currentSession())。
+           不要用 Boolean(conversation)——customFrame 下没会话也会传隐藏容器，判断恒为真。 */
+        const activeSession = React.useMemo(() => ownedSession(), [paneTick]) // eslint-disable-line react-hooks/exhaustive-deps
+        const hasConversation = Boolean(activeSession) // pane-contract-allow: 反例说明见上
+        const canOpenSession = typeof bridge?.desktopWorkbenches?.newSession === 'function'
 
         // 8 秒内没有 onLoad 就当没起来：宁可给一个能重试的提示，也不留一块白板。
         // onLoad 成功后必须清掉定时器 —— 否则加载完 8 秒后面板会被换成兜底页。
@@ -277,7 +290,7 @@
 
         React.useEffect(() => {
           const timer = setInterval(() => { if (flushDraft()) setNote('草稿已填入会话，按回车发送') }, 500)
-          const unsubscribe = bridge?.desktopWorkbenches?.subscribe?.(() => setNote(''))
+          const unsubscribe = bridge?.desktopWorkbenches?.subscribe?.(() => { setNote(''); setPaneTick((n) => n + 1) })
           return () => { clearInterval(timer); unsubscribe?.() }
         }, [])
 
@@ -351,8 +364,12 @@
               const res = await fetch(`${API_PREFIX}/health`)
               dir = (await res.json())?.dir || null
             } catch { /* 拿不到目录也照样调起 */ }
-            const id = await bridge.desktopWorkbenches.ensureSession({ folder: dir })
-            rememberDraft({ sessionId: id, prompt: prompt || onboardingPrompt(dir) })
+            const id = await createOwnedSession()
+                        if (!id) {
+              setNote('已取消资料目录选择，没有创建会话。可以再次点击「AI 对话」重试。')
+              return
+            }
+rememberDraft({ sessionId: id, prompt: prompt || onboardingPrompt(dir) })
             flushDraft()
             setPaneOpen(true)
             setNote('会话已就绪：草稿已填入右侧输入框，按回车发送')

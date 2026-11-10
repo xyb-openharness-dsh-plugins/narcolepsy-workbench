@@ -1,6 +1,6 @@
 {
   "name": "@snoozepal-dsh/narcolepsy-workbench",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "本机优先的发作性睡病嗜睡发作时段日志、ESS 量表序列、夜间睡眠事件、管制药耐受与就诊准备工作台",
   "private": true,
   "type": "module",
@@ -23,7 +23,7 @@
     "NOTICE.md"
   ],
   "scripts": {
-    "check": "node --check dsh/index.js && node --check dsh/store.js && node --check dsh/server.js && node --check dsh/routes.js && node --check dsh/workbench.js && node --check dsh/demo.js && node --check dsh/readmodels.js && node --check dsh/metric-catalog.js && node --check public/app.js && node --check lib/client.js && node --check lib/layout.js && node scripts/build-version.mjs --check && node scripts/check-version.mjs && node scripts/check-schema.mjs && node scripts/check-wording.mjs && node scripts/check-readme-assets.mjs . && node scripts/build-client.mjs --check && node scripts/build-demo-trials.mjs --check && node demo/build-demo-data.mjs --check && node --test test/*.test.mjs && node scripts/check-workbench-package.mjs . && node scripts/check-host-contract.mjs && node scripts/check-primer-links.mjs",
+    "check": "node --check dsh/index.js && node --check dsh/store.js && node --check dsh/server.js && node --check dsh/routes.js && node --check dsh/workbench.js && node --check dsh/demo.js && node --check dsh/readmodels.js && node --check dsh/metric-catalog.js && node --check public/app.js && node --check lib/client.js && node --check lib/layout.js && node scripts/build-version.mjs --check && node scripts/check-version.mjs && node scripts/check-schema.mjs && node scripts/check-wording.mjs && node scripts/check-readme-assets.mjs . && node scripts/build-client.mjs --check && node scripts/build-demo-trials.mjs --check && node demo/build-demo-data.mjs --check && node --test test/*.test.mjs && node scripts/check-workbench-package.mjs . && node scripts/check-host-contract.mjs && node scripts/check-primer-links.mjs && node scripts/check-agent-pane-contract.mjs .",
     "test": "node --test test/*.test.mjs",
     "check:proto": "node scripts/probe-prototype.mjs",
     "check:ix": "node scripts/probe-interactions.mjs",
